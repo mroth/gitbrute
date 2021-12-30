@@ -26,12 +26,15 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"time"
 )
 
 var (
-	prefix = flag.String("prefix", "bf", "Desired prefix")
-	force  = flag.Bool("force", false, "Re-run, even if current hash matches prefix")
-	cpu    = flag.Int("cpus", runtime.NumCPU(), "Number of CPUs to use. Defaults to number of processors.")
+	prefix  = flag.String("prefix", "bf", "Desired prefix")
+	force   = flag.Bool("force", false, "Re-run, even if current hash matches prefix")
+	cpu     = flag.Int("cpus", runtime.NumCPU(), "Number of CPUs to use. Defaults to number of processors.")
+	dryrun  = flag.Bool("dryrun", false, "Do not amend commit")
+	verbose = flag.Bool("v", false, "Verbose output")
 )
 
 func main() {
@@ -46,6 +49,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	logVerboseF("Current HEAD hash %v", hash)
 	if strings.HasPrefix(hash, *prefix) && !*force {
 		return
 	}
@@ -63,7 +67,17 @@ func main() {
 	}
 
 	// search (forever) until a solution is found
+	logVerboseF("Beginning search for hash matching prefix `%v`", *prefix)
+	start := time.Now()
 	w := Solve(obj)
+	elapsed := time.Since(start)
+
+	// if -dryrun, show information and exit instead
+	logVerboseF("Found matching commit in %v", elapsed)
+	if *dryrun {
+		logVerboseF("Dry run: exiting without amending...")
+		os.Exit(0)
+	}
 
 	// amend the most recent commit with the skewed timestamps
 	cmd := exec.Command("git", "commit", "--allow-empty", "--amend", "--date="+w.author.String(), "--file=-")
@@ -72,5 +86,11 @@ func main() {
 	cmd.Stdin = bytes.NewReader(msg)
 	if err := cmd.Run(); err != nil {
 		log.Fatalf("amend: %v", err)
+	}
+}
+
+func logVerboseF(format string, v ...interface{}) {
+	if *verbose {
+		log.Printf(format, v...)
 	}
 }
