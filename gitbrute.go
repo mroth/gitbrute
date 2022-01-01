@@ -68,7 +68,7 @@ func main() {
 	// search (forever) until a solution is found
 	logVerboseF("Beginning search for hash matching prefix `%v`", *prefix)
 	start := time.Now()
-	w := Solve(obj)
+	w := Solve(obj, *prefix)
 	elapsed := time.Since(start)
 
 	// if -dryrun, show information and exit instead
