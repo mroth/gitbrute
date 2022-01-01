@@ -3,8 +3,8 @@ package main
 import (
 	"bytes"
 	"crypto/sha1"
+	"encoding/hex"
 	"fmt"
-	"hash"
 	"strconv"
 	"strings"
 	"time"
@@ -85,17 +85,13 @@ type checker struct {
 	blob                   []byte // storage for mutating obj in place
 	authorDate, commitDate date   // original dates extracted from git header
 	adatei, cdatei         int    // index of date location in blob
-	hexBuf                 []byte
-	s1                     hash.Hash
+	hexBuf                 []byte // reusable buffer for hex encoding storage
 }
 
 func newChecker(obj []byte, prefix string, startUnix int64) checker {
 	blob := []byte(fmt.Sprintf("commit %d\x00%s", len(obj), obj))
 	authorDate, adatei := getDate(blob, authorDateRx)
 	commitDate, cdatei := getDate(blob, committerDateRx)
-
-	s1 := sha1.New()
-	hexBuf := make([]byte, 0, sha1.Size*2)
 
 	return checker{
 		wantHexPrefix: []byte(strings.ToLower(prefix)),
@@ -105,8 +101,7 @@ func newChecker(obj []byte, prefix string, startUnix int64) checker {
 		commitDate:    commitDate,
 		adatei:        adatei,
 		cdatei:        cdatei,
-		hexBuf:        hexBuf,
-		s1:            s1,
+		hexBuf:        make([]byte, hex.EncodedLen(sha1.Size)),
 	}
 }
 
@@ -116,22 +111,8 @@ func (c *checker) check(t try) (newdate solution, ok bool) {
 	newdate.committer = date{c.startUnix - int64(t.commitBehind), c.commitDate.tz}
 	strconv.AppendInt(c.blob[:c.adatei], newdate.author.n, 10)
 	strconv.AppendInt(c.blob[:c.cdatei], newdate.committer.n, 10)
-	c.s1.Reset()
-	c.s1.Write(c.blob)
 
-	hex := hexInPlace(c.s1.Sum(c.hexBuf[:0]))
-	return newdate, bytes.HasPrefix(hex, c.wantHexPrefix)
-}
-
-// hexInPlace takes a slice of binary data and returns the same slice with double
-// its length, hex-ified in-place.
-func hexInPlace(v []byte) []byte {
-	const hex = "0123456789abcdef"
-	h := v[:len(v)*2]
-	for i := len(v) - 1; i >= 0; i-- {
-		b := v[i]
-		h[i*2+0] = hex[b>>4]
-		h[i*2+1] = hex[b&0xf]
-	}
-	return h
+	sum := sha1.Sum(c.blob)
+	hex.Encode(c.hexBuf, sum[:])
+	return newdate, bytes.HasPrefix(c.hexBuf, c.wantHexPrefix)
 }
