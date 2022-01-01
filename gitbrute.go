@@ -32,14 +32,13 @@ import (
 var (
 	prefix  = flag.String("prefix", "bf", "Desired prefix")
 	force   = flag.Bool("force", false, "Re-run, even if current hash matches prefix")
-	cpu     = flag.Int("cpus", runtime.NumCPU(), "Number of CPUs to use. Defaults to number of processors.")
+	cpu     = flag.Int("cpus", runtime.NumCPU(), "Number of workers to use. Defaults to number of processors.")
 	dryrun  = flag.Bool("dryrun", false, "Do not amend commit")
 	verbose = flag.Bool("v", false, "Verbose output")
 )
 
 func main() {
 	flag.Parse()
-	runtime.GOMAXPROCS(*cpu)
 	if _, err := strconv.ParseInt(*prefix, 16, 64); err != nil {
 		log.Fatalf("Prefix %q isn't hex.", *prefix)
 	}
