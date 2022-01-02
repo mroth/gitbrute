@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"testing"
 )
 
@@ -24,15 +25,21 @@ var testObjBytes = []byte(testObj)
 // and continuing regardless of whether a match is found.
 func BenchmarkSolveParallel(b *testing.B) {
 	b.SetBytes(int64(len(testObjBytes)))
-
-	possibilities := make(chan try, 512)
-	go explore(possibilities)
+	ctx := context.Background()
 
 	b.RunParallel(func(pb *testing.PB) {
 		c := newChecker(testObjBytes, testPrefix, testTS)
+		genf := Explorer(0, 4)
+
 		for pb.Next() {
-			t := <-possibilities
-			_, _ = c.check(t)
+			select {
+			case <-ctx.Done():
+				// will never happen, but want to include the select in bench
+				b.Fatal(ctx.Err())
+			default:
+				t := genf()
+				_, _ = c.check(t)
+			}
 		}
 	})
 }

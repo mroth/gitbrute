@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha1"
 	"encoding/hex"
 	"fmt"
@@ -13,17 +14,39 @@ import (
 func Solve(obj []byte, prefix string) solution {
 	startUnix := time.Now().Unix() // ts to begin looking for matching commits
 
-	possibilities := make(chan try, 512)
-	go explore(possibilities)
+	// NOTE: parentCtx could be extended to take a ctx in Solve function args to
+	// allow for external cancellation, but if doing so we'll also need to modify
+	// the exit path and function signature to allow for the possibility of error
+	// on a timeout.
+	parentCtx := context.Background()
+	ctx, cancelWorkers := context.WithCancel(parentCtx)
 
 	winner := make(chan solution)
-	done := make(chan struct{})
-	for i := 0; i < *cpu; i++ {
-		go bruteForce(obj, prefix, startUnix, winner, possibilities, done)
+	explorers := splitExplore(*cpu)
+	for _, exf := range explorers {
+		exf := exf
+		c := newChecker(obj, prefix, startUnix)
+		go solver(ctx, exf, c, winner)
 	}
+
 	w := <-winner
-	close(done)
+	cancelWorkers()
 	return w
+}
+
+func solver(ctx context.Context, exf exploreFunc, c checker, winner chan<- solution) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			t := exf() // next value from explore generator
+			if s, ok := c.check(t); ok {
+				winner <- s
+				return
+			}
+		}
+	}
 }
 
 type solution struct {
@@ -35,47 +58,6 @@ type solution struct {
 type try struct {
 	commitBehind int
 	authorBehind int
-}
-
-// explore yields the sequence:
-//     (0, 0)
-//
-//     (0, 1)
-//     (1, 0)
-//     (1, 1)
-//
-//     (0, 2)
-//     (1, 2)
-//     (2, 0)
-//     (2, 1)
-//     (2, 2)
-//
-//     ...
-func explore(c chan<- try) {
-	for max := 0; ; max++ {
-		for i := 0; i <= max-1; i++ {
-			c <- try{i, max}
-		}
-		for j := 0; j <= max; j++ {
-			c <- try{max, j}
-		}
-	}
-}
-
-func bruteForce(obj []byte, prefix string, start int64, winner chan<- solution, possibilities <-chan try, done <-chan struct{}) {
-	c := newChecker(obj, prefix, start)
-
-	for t := range possibilities {
-		select {
-		case <-done:
-			return
-		default:
-			if s, ok := c.check(t); ok {
-				winner <- s
-				return
-			}
-		}
-	}
 }
 
 type checker struct {
