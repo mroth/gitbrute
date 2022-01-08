@@ -23,6 +23,7 @@ This amends the last commit of the current repository.
 ## Changes
 
 - `-dryrun` and `-v` verbose flags.
+- set a default prefix via `$GITBRUTE_PREFIX`.
 - refactored code for profiling and benchmarking.
 - modernized for ease of maintenance to use some standard library additions.
 - improved mechanism for parallel trial exploration, increases performance

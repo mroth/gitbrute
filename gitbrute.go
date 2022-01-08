@@ -1,19 +1,3 @@
-/*
-Copyright 2014 Google Inc.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-     http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
 // The gitbrute command brute-forces a git commit hash prefix.
 package main
 
@@ -30,12 +14,19 @@ import (
 )
 
 var (
-	prefix  = flag.String("prefix", "bf", "Desired prefix")
-	force   = flag.Bool("force", false, "Re-run, even if current hash matches prefix")
+	prefix  = flag.String("prefix", defaultPrefix(), "Desired prefix. Set default via $GITBRUTE_PREFIX.")
+	force   = flag.Bool("force", false, "Re-run, even if current hash already matches prefix.")
 	cpu     = flag.Int("cpus", runtime.NumCPU(), "Number of workers to use. Defaults to number of processors.")
-	dryrun  = flag.Bool("dryrun", false, "Do not amend commit")
-	verbose = flag.Bool("v", false, "Verbose output")
+	dryrun  = flag.Bool("dryrun", false, "Do not amend commit.")
+	verbose = flag.Bool("v", false, "Verbose output.")
 )
+
+func defaultPrefix() string {
+	if prefix := os.Getenv("GITBRUTE_PREFIX"); prefix != "" {
+		return prefix
+	}
+	return "bf"
+}
 
 func main() {
 	flag.Parse()
