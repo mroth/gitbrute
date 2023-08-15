@@ -29,14 +29,26 @@ This amends the last commit of the current repository.
 - improved mechanism for parallel trial exploration, increases performance
   significantly on multiple CPU cores.<sup>*</sup>
 
-<small>\* On a 2020 MacBook Air (4p/4e core), approximately ~70% performance
-improvement in time to find a solution. [[ref]]</small>
-
 :headstone: The original gitbrute ["is kinda a joke and I don't want to maintain
 it"][upstream-status], so I am maintaining this as my own fork for personal use
 rather than working on pull requests and giving someone else more maintenance
 chores.
 
+## Performance
+
+On my personal laptop (MacBook M2 Pro), I get a roughly ~15x throughput increase
+as a result of the various optimizations:
+
+| bradfitz/gitbrute | mroth/gitbrute |
+|-------------------|----------------|
+|       3.1M op/sec |   47.8M op/sec |
+
+At this speed, 1-5 character prefixes are pretty much instant, and a 6 character
+prefix takes ~100-500ms.
+
+_If you really want to make your coworkers hate you, this can typically generate
+7 character prefixes (the total length of a git short sha as displayed in most
+GitHub tooling) in ~15-30 seconds._
 
 [upstream]: https://github.com/bradfitz/gitbrute/
 [ref]: https://github.com/mroth/gitbrute/pull/1
