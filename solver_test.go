@@ -15,7 +15,7 @@ Lowercase the prefix from the command line
 Previously, running gitbrute with an uppercase hex prefix had resulted
 in an endless loop.
 `
-const testPrefix = "abcd"
+const testPrefix = "1234567890"
 const testTS = 1641066267
 
 var testObjBytes = []byte(testObj)
@@ -24,7 +24,6 @@ var testObjBytes = []byte(testObj)
 // breaking out the check step so we can treat it as a RunParallel iteration,
 // and continuing regardless of whether a match is found.
 func BenchmarkSolveParallel(b *testing.B) {
-	b.SetBytes(int64(len(testObjBytes)))
 	ctx := context.Background()
 
 	b.RunParallel(func(pb *testing.PB) {
@@ -42,6 +41,8 @@ func BenchmarkSolveParallel(b *testing.B) {
 			}
 		}
 	})
+
+	b.ReportMetric(float64(b.N)/b.Elapsed().Seconds(), "ops/sec")
 }
 
 // benchmark just the comparison portion, removing any overhead from candidate
