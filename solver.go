@@ -24,7 +24,6 @@ func Solve(obj []byte, prefix string) solution {
 	winner := make(chan solution)
 	explorers := splitExplore(*cpu)
 	for _, exf := range explorers {
-		exf := exf
 		c := newChecker(obj, prefix, startUnix)
 		go solver(ctx, exf, c, winner)
 	}
@@ -71,7 +70,7 @@ type checker struct {
 }
 
 func newChecker(obj []byte, prefix string, startUnix int64) checker {
-	blob := []byte(fmt.Sprintf("commit %d\x00%s", len(obj), obj))
+	blob := fmt.Appendf(nil, "commit %d\x00%s", len(obj), obj)
 	authorDate, adatei := getDate(blob, authorDateRx)
 	commitDate, cdatei := getDate(blob, committerDateRx)
 

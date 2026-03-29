@@ -105,7 +105,6 @@ func TestExplorer(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel() // run in parallel to validate thread safety
 
@@ -140,7 +139,7 @@ func Test_splitExplore(t *testing.T) {
 				t.Fatalf("len(splitExplore(%v)) = %d,  want %d", tt.n, len(got), len(tt.want))
 			}
 
-			for i := 0; i < len(got); i++ {
+			for i := range got {
 				compareGenerators(t, got[i], tt.want[i], 10)
 			}
 		})
@@ -152,7 +151,7 @@ func compareGenerators(t *testing.T, f1, f2 exploreFunc, samples int) {
 
 	r1 := make([]try, 0, samples)
 	r2 := make([]try, 0, samples)
-	for i := 0; i < samples; i++ {
+	for range samples {
 		r1 = append(r1, f1())
 		r2 = append(r2, f2())
 	}

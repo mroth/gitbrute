@@ -79,7 +79,7 @@ func main() {
 	}
 }
 
-func logVerboseF(format string, v ...interface{}) {
+func logVerboseF(format string, v ...any) {
 	if *verbose {
 		log.Printf(format, v...)
 	}

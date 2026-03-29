@@ -52,7 +52,7 @@ func BenchmarkCheck(b *testing.B) {
 
 	c := newChecker(testObjBytes, testPrefix, testTS)
 	t := try{10, 10}
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		c.check(t)
 	}
 }

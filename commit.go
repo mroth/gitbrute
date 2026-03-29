@@ -25,11 +25,11 @@ func currentHash() (string, error) {
 
 // extractMessage returns only the message portion of a commit object.
 func extractCommitMessage(obj []byte) ([]byte, error) {
-	i := bytes.Index(obj, []byte("\n\n"))
-	if i < 0 {
+	_, after, ok := bytes.Cut(obj, []byte("\n\n"))
+	if !ok {
 		return nil, fmt.Errorf("no \\n\\n found in %q", obj)
 	}
-	msg := obj[i+2:]
+	msg := after
 	return msg, nil
 }
 
